@@ -1,0 +1,2228 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Hotel Transylvania & Manajemen Korporat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- jsPDF untuk export PDF tiket -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- SheetJS (xlsx) untuk export format .xlsx yang rapi -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --card-bg: rgba(15, 23, 42, 0.88);
+            --primary: #38bdf8;
+            --primary-hover: #0ea5e9;
+            --secondary: #818cf8;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: rgba(56, 189, 248, 0.3);
+            --shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+            --error-color: #f43f5e;
+            --success-color: #34d399;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Quicksand', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: linear-gradient(rgba(15, 23, 42, 0.8), rgba(30, 27, 75, 0.88)), 
+                        url('2137227-3549x1920-desktop-hd-hotel-transylvania-wallpaper.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+            padding: 2rem;
+        }
+
+        .frame-16-9 {
+            width: 100%;
+            max-width: 1440px;
+            aspect-ratio: 16 / 9;
+            background: rgba(10, 15, 30, 0.82);
+            backdrop-filter: blur(20px);
+            border: 3px solid rgba(56, 189, 248, 0.4);
+            border-radius: 28px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Login Screen Overlay */
+        .login-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 15, 30, 0.95);
+            backdrop-filter: blur(25px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 5000;
+            transition: opacity 0.5s ease;
+        }
+
+        .login-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            border: 2px solid rgba(56, 189, 248, 0.4);
+            border-radius: 24px;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .login-card h2 {
+            color: #38bdf8;
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+        .login-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            text-align: left;
+        }
+
+        .login-error {
+            color: var(--error-color);
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: none;
+            text-align: center;
+        }
+
+        .login-error.active {
+            display: block;
+        }
+
+        /* Top Header & Ticker Kata Sambutan */
+        .top-banner {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #0f172a 100%);
+            border-bottom: 2px dashed rgba(56, 189, 248, 0.4);
+            padding: 1.2rem 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            position: relative;
+        }
+
+        .brand-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #38bdf8;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+            text-align: center;
+        }
+
+        .btn-logout {
+            position: absolute;
+            top: 1.2rem;
+            right: 2rem;
+            background: linear-gradient(135deg, #be123c 0%, #f43f5e 100%);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(244, 63, 94, 0.4);
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .btn-logout:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(244, 63, 94, 0.6);
+        }
+
+        .ticker-wrap {
+            width: 100%;
+            overflow: hidden;
+            background: rgba(15, 23, 42, 0.7);
+            border-radius: 10px;
+            padding: 0.4rem 0;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+
+        .ticker-move {
+            display: inline-block;
+            white-space: nowrap;
+            animation: tickerAnim 25s linear infinite;
+            font-size: 0.95rem;
+            color: #38bdf8;
+            font-weight: 600;
+        }
+
+        @keyframes tickerAnim {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        /* Workspace Content */
+        .workspace {
+            padding: 2.5rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .content-section {
+            display: none;
+            width: 100%;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn-back-home {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: #38bdf8;
+            border: 2px solid #38bdf8;
+            padding: 0.6rem 1.2rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            transition: all 0.3s ease;
+        }
+
+        .btn-back-home:hover {
+            background: #38bdf8;
+            color: #0f172a;
+            transform: translateX(-3px);
+        }
+
+        /* Dashboard Cards */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .nav-card {
+            background: var(--card-bg);
+            border: 2px solid rgba(56, 189, 248, 0.3);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .nav-card:hover {
+            transform: translateY(-5px);
+            border-color: #38bdf8;
+            background: linear-gradient(135deg, rgba(2, 132, 199, 0.2) 0%, rgba(56, 189, 248, 0.2) 100%);
+        }
+
+        .nav-card-icon {
+            font-size: 2.8rem;
+        }
+
+        .nav-card h3 {
+            color: #38bdf8;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .nav-card p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* Info Grid & Interactive Items */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .info-card {
+            background: var(--card-bg);
+            border: 2px solid rgba(56, 189, 248, 0.3);
+            border-radius: 20px;
+            padding: 1.8rem;
+            box-shadow: var(--shadow);
+        }
+
+        .info-card h2 {
+            color: #38bdf8;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px dashed rgba(56, 189, 248, 0.3);
+            padding-bottom: 0.5rem;
+        }
+
+        .clickable-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.7rem 0.8rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.9rem;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .clickable-item:hover {
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            transform: translateX(3px);
+        }
+
+        /* Modal Overlays */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 15, 30, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 6000;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-card {
+            background: var(--card-bg);
+            border: 2px solid #38bdf8;
+            border-radius: 24px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 650px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: #f43f5e;
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-title {
+            color: #38bdf8;
+            font-size: 1.3rem;
+            font-weight: 700;
+            border-bottom: 2px dashed rgba(56, 189, 248, 0.3);
+            padding-bottom: 0.6rem;
+        }
+
+        /* Spotify-style Queue List for Saved Edits */
+        .spotify-queue-container {
+            margin-top: 1rem;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 14px;
+            padding: 1rem;
+            max-height: 280px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .spotify-queue-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(30, 41, 59, 0.8);
+            padding: 0.8rem 1rem;
+            border-radius: 10px;
+            border-left: 4px solid #38bdf8;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .spotify-queue-item:hover {
+            background: rgba(56, 189, 248, 0.15);
+            transform: translateX(3px);
+        }
+
+        /* Carousel Styles */
+        .carousel-container {
+            position: relative;
+            width: 100%;
+            height: 260px;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 2px solid #334155;
+            background: #0f172a;
+        }
+
+        .carousel-slide {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+
+        .carousel-slide.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .carousel-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(15, 23, 42, 0.8);
+            color: #38bdf8;
+            border: 2px solid #38bdf8;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            z-index: 10;
+        }
+
+        .carousel-btn:hover {
+            background: #38bdf8;
+            color: #0f172a;
+        }
+
+        .carousel-prev { left: 15px; }
+        .carousel-next { right: 15px; }
+
+        /* Form elements for editing */
+        .edit-form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .edit-form-group label {
+            color: #38bdf8;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .edit-form-group input, .edit-form-group textarea, .edit-form-group select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #334155;
+            border-radius: 10px;
+            background: #1e293b;
+            color: #f8fafc;
+            font-size: 0.95rem;
+        }
+
+        .edit-form-group input:focus, .edit-form-group textarea:focus, .edit-form-group select:focus {
+            outline: none;
+            border-color: #38bdf8;
+        }
+
+        /* Buttons (Dibuat Kecil) */
+        .btn-action {
+            background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(56, 189, 248, 0.5);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #059669 0%, #34d399 100%);
+            box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
+        }
+
+        .btn-danger-sm {
+            background: #be123c;
+            color: white;
+            border: none;
+            padding: 0.35rem 0.7rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-danger-sm:hover {
+            background: #f43f5e;
+        }
+
+        .btn-warning-sm {
+            background: #d97706;
+            color: white;
+            border: none;
+            padding: 0.35rem 0.7rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-warning-sm:hover {
+            background: #f59e0b;
+        }
+
+        /* Calculator Styles */
+        .container {
+            background: var(--card-bg);
+            border: 2px solid rgba(56, 189, 248, 0.3);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .form-content {
+            padding: 2.2rem;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .form-group-short {
+            max-width: 140px;
+        }
+
+        label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #38bdf8;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.7rem 1rem;
+            border: 2px solid #334155;
+            border-radius: 12px;
+            background: #1e293b;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.2);
+        }
+
+        .error-message {
+            color: var(--error-color);
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 0.4rem;
+            display: none;
+        }
+
+        .error-message.active {
+            display: flex;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            font-size: 0.9rem;
+            font-weight: 700;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.6);
+        }
+
+        .btn-clear {
+            background: linear-gradient(135deg, #be123c 0%, #f43f5e 100%);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            font-size: 0.9rem;
+            font-weight: 700;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(244, 63, 94, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .btn-clear:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(244, 63, 94, 0.6);
+        }
+
+        .result-section {
+            margin-top: 2rem;
+            background: #1e293b;
+            border: 2px solid #334155;
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: none;
+        }
+
+        .result-section.active {
+            display: block;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #38bdf8;
+            border-bottom: 2px dashed #334155;
+            padding-bottom: 0.5rem;
+            text-align: center;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .result-item {
+            background: #0f172a;
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid #334155;
+        }
+
+        .result-item span {
+            display: block;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+
+        .result-item strong {
+            font-size: 1.1rem;
+            color: #f8fafc;
+        }
+
+        .result-item.highlight {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+            border-color: #38bdf8;
+        }
+
+        /* Gallery & Video Grids */
+        .gallery-grid, .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card-item {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 1rem;
+            box-shadow: var(--shadow);
+            border: 2px solid rgba(56, 189, 248, 0.2);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .card-item:hover {
+            transform: translateY(-5px);
+            border-color: #38bdf8;
+        }
+
+        .card-item img, .card-item video {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            border-radius: 14px;
+            margin-bottom: 0.8rem;
+            cursor: pointer;
+        }
+
+        .download-btn {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: rgba(15, 23, 42, 0.85);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-decoration: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card-item:hover .download-btn {
+            opacity: 1;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #38bdf8;
+            text-align: center;
+        }
+
+        /* Support Section */
+        .support-card {
+            background: var(--card-bg);
+            border: 2px solid rgba(56, 189, 248, 0.3);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+        }
+
+        .support-contacts {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .contact-btn {
+            padding: 0.8rem 1.5rem;
+            border-radius: 14px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-whatsapp {
+            background: #064e3b;
+            color: #34d399;
+            border: 1px solid #059669;
+        }
+
+        .btn-email {
+            background: #1e1b4b;
+            color: #818cf8;
+            border: 1px solid #4338ca;
+        }
+
+        .support-bottom-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+            border-top: 2px dashed rgba(56, 189, 248, 0.3);
+            padding-top: 1.8rem;
+        }
+
+        .support-info-box {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .support-info-box h3 {
+            color: #38bdf8;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .support-info-box p, .support-info-box ul {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .support-info-box ul {
+            list-style-type: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .support-info-box li strong {
+            color: var(--text-main);
+        }
+
+        /* Minigame Section */
+        .minigame-container {
+            background: var(--card-bg);
+            border: 2px solid rgba(56, 189, 248, 0.3);
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            margin-top: 1.5rem;
+        }
+
+        .game-stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0f172a;
+            padding: 0.8rem 1.2rem;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .story-screen {
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            min-height: 220px;
+            justify-content: space-between;
+        }
+
+        .story-image-box {
+            text-align: center;
+            font-size: 3rem;
+        }
+
+        .story-text {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            text-align: center;
+            color: var(--text-main);
+            min-height: 50px;
+        }
+
+        .game-buttons-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .game-btn {
+            background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+            color: white;
+            border: none;
+            padding: 0.6rem 1rem;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(2, 132, 199, 0.3);
+        }
+
+        .game-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.5);
+        }
+
+        .game-btn.danger {
+            background: linear-gradient(135deg, #be123c 0%, #f43f5e 100%);
+            box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3);
+        }
+
+        /* Small Audio Player at Bottom Right Corner */
+        .corner-audio-player {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(15, 23, 42, 0.92);
+            border: 2px solid #38bdf8;
+            border-radius: 14px;
+            padding: 0.5rem 0.8rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .corner-audio-player audio {
+            height: 32px;
+            width: 180px;
+            border-radius: 8px;
+        }
+
+        /* Lightbox & Confetti */
+        .lightbox-modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 2rem;
+        }
+
+        .lightbox-modal.active { display: flex; }
+        .lightbox-img { max-width: 90%; max-height: 80vh; border-radius: 16px; border: 2px solid var(--primary); }
+        .lightbox-close { position: absolute; top: 2rem; right: 2.5rem; background: #f43f5e; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; font-weight: 700; cursor: pointer; }
+
+        .confetti-piece {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 3000;
+            animation: explodeConfetti 1.2s ease-out forwards;
+        }
+
+        @keyframes explodeConfetti {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0.4) rotate(360deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 16:9 Aspect Ratio Frame Container -->
+    <div class="frame-16-9">
+        
+        <!-- Login Screen Overlay (admin / 1234) -->
+        <div id="loginScreen" class="login-screen">
+            <div class="login-card">
+                <h2>🦇 Login Admin 🦇</h2>
+                <p>Silakan masukkan kredensial untuk mengakses sistem Hotel Transylvania.</p>
+                <form id="loginForm" class="login-form">
+                    <div class="form-group">
+                        <label for="usernameInput">Username</label>
+                        <input type="text" id="usernameInput" placeholder="Masukkan username (admin)" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="passwordInput">Password</label>
+                        <input type="password" id="passwordInput" placeholder="Masukkan password (1234)" required>
+                    </div>
+                    <div id="loginError" class="login-error">⚠️ Username atau Password salah! (Coba: admin / 1234)</div>
+                    <button type="submit" class="btn-submit" style="margin-top: 0.5rem;">Masuk ke Sistem 🚪</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Top Banner & Ticker Kata Sambutan -->
+        <div class="top-banner">
+            <button class="btn-logout" onclick="handleLogout()">Logout 🚪</button>
+            <div class="brand-title">✨ Hotel Transylvania & Manajemen Korporat ✨</div>
+            <div class="ticker-wrap">
+                <div class="ticker-move">
+                    🦇 Selamat Datang di Sistem Informasi Resmi Hotel Transylvania! Nikmati pengelolaan laporan keuangan otomatis, kalkulator gaji (maks 1000 list, batasan masa kerja 25 tahun), histori kalkulator di halaman utama, tombol Unduh ke Excel (.xlsx) dengan baris rapi dan sejajar, serta pemesanan kamar dengan 5 foto terpisah dan pembayaran BCA-only! 🧛‍♂️
+                </div>
+            </div>
+        </div>
+
+        <!-- Workspace Content Area -->
+        <div class="workspace">
+            
+            <!-- HOME TAB -->
+            <div id="home" class="content-section active">
+                
+                <div class="dashboard-grid">
+                    <div class="nav-card" onclick="switchTab('calculator', event)">
+                        <div class="nav-card-icon">🧮</div>
+                        <h3>Kalkulator Gaji</h3>
+                        <p>Hitung gaji bersih karyawan dengan cepat & akurat.</p>
+                    </div>
+                    <div class="nav-card" onclick="switchTab('gallery', event)">
+                        <div class="nav-card-icon">🖼️</div>
+                        <h3>Galeri Kantor</h3>
+                        <p>Lihat wallpaper & suasana estetik Hotel Transylvania.</p>
+                    </div>
+                    <div class="nav-card" onclick="switchTab('videos', event)">
+                        <div class="nav-card-icon">🎬</div>
+                        <h3>List Video</h3>
+                        <p>Koleksi video profil dan aktivitas keseharian kantor.</p>
+                    </div>
+                    <div class="nav-card" onclick="switchTab('contact', event)">
+                        <div class="nav-card-icon">📞</div>
+                        <h3>Kontak Support</h3>
+                        <p>Tim support siap membantu Anda 24 jam non-stop.</p>
+                    </div>
+                </div>
+
+                <!-- HISTORI KALKULATOR DI HALAMAN UTAMA -->
+                <div class="info-card" style="margin-top: 2rem;">
+                    <h2>📋 Histori Kalkulator Gaji Karyawan (Tersimpan otomatis)</h2>
+                    <div id="homeHistoryContainer" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem; margin-top: 1rem;">
+                        <div style="text-align: center; color: var(--text-muted); font-size: 0.9rem;">Belum ada data perhitungan gaji yang tersimpan. Silakan gunakan Kalkulator Gaji!</div>
+                    </div>
+                </div>
+
+                <!-- Daftar Karyawan, Laporan Keuangan, Produk & Layanan -->
+                <div class="info-grid" style="margin-top: 2rem;">
+                    
+                    <div class="info-card">
+                        <h2>👥 Daftar Nama Karyawan</h2>
+                        <div class="clickable-item" onclick="openEmployeeModal('dracula')">
+                            <span>Count Dracula</span><span>Manager Utama 🔍</span>
+                        </div>
+                        <div class="clickable-item" onclick="openEmployeeModal('mavis')">
+                            <span>Mavis Dracula</span><span>HRD & Humas 🔍</span>
+                        </div>
+                        <div class="clickable-item" onclick="openEmployeeModal('jonathan')">
+                            <span>Jonathan Loughran</span><span>Event & Kreatif 🔍</span>
+                        </div>
+                        <div class="clickable-item" onclick="openEmployeeModal('frankenstein')">
+                            <span>Frankenstein</span><span>Keamanan & Teknik 🔍</span>
+                        </div>
+                        <div class="clickable-item" onclick="openEmployeeModal('wayne')">
+                            <span>Wayne Werewolf</span><span>Logistik & Tamu 🔍</span>
+                        </div>
+                    </div>
+
+                    <div class="info-card">
+                        <h2>📊 Laporan Keuangan Bulanan</h2>
+                        <div class="clickable-item" onclick="openFinanceModal('pendapatan')">
+                            <span>Pendapatan Hotel</span><span id="displayPendapatan" style="color: #34d399;">Rp 850.000.000 ✏️</span>
+                        </div>
+                        <div class="clickable-item" onclick="openFinanceModal('operasional')">
+                            <span>Pengeluaran Operasional</span><span id="displayOperasional" style="color: #f43f5e;">Rp 320.000.000 ✏️</span>
+                        </div>
+                        <div class="clickable-item" onclick="openFinanceModal('gaji')">
+                            <span>Total Pembayaran Gaji</span><span id="displayGaji" style="color: #f43f5e;">Rp 180.000.000 ✏️</span>
+                        </div>
+                        <div class="clickable-item" onclick="openFinanceModal('laba')">
+                            <span>Laba Bersih</span><span id="displayLaba" style="color: #38bdf8; font-weight:700;">Rp 350.000.000 ✏️</span>
+                        </div>
+                    </div>
+
+                    <div class="info-card">
+                        <h2>💼 Produk & Layanan</h2>
+                        <div class="clickable-item" onclick="openRoomModal('kamarVIP')">
+                            <span>Kamar VIP Kastil</span><span style="color: #38bdf8;">Rp 2.500.000 / malam 🏨</span>
+                        </div>
+                        <div class="clickable-item" onclick="openRoomModal('nikahMonster')">
+                            <span>Paket Pernikahan Monster</span><span style="color: #38bdf8;">Rp 45.000.000 🏨</span>
+                        </div>
+                        <div class="clickable-item" onclick="openRoomModal('turPurnama')">
+                            <span>Tur Wisata Bulan Purnama</span><span style="color: #38bdf8;">Rp 750.000 / orang 🏨</span>
+                        </div>
+                        <div class="clickable-item" onclick="openRoomModal('spaTengkorak')">
+                            <span>Spa & Pijat Tengkorak</span><span style="color: #38bdf8;">Rp 500.000 / sesi 🏨</span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Minigame RPG -->
+                <div class="minigame-container">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px dashed rgba(56,189,248,0.3); padding-bottom:0.8rem;">
+                        <h3 style="color:#38bdf8;">🦇 Minigame RPG: Shift Malam Hotel Transylvania</h3>
+                    </div>
+
+                    <div class="game-stats-bar">
+                        <span>❤️ Nyawa: <strong id="statHp">100</strong></span>
+                        <span>💰 Kas Hotel: Rp <strong id="statMoney">5.000.000</strong></span>
+                        <span>⭐ Reputasi: <strong id="statRep">50</strong>%</span>
+                    </div>
+
+                    <div class="story-screen">
+                        <div id="gameEmoji" class="story-image-box">🧛‍♂️</div>
+                        <div id="gameText" class="story-text">
+                            Shift malam dimulai! Count Dracula mengawasimu di lobby utama. Ada dua tamu VIP datang bersamaan. Pilih tindakan dengan hati-hati!
+                        </div>
+                        <div class="game-buttons-grid" id="gameButtonsArea">
+                            <button class="game-btn" onclick="handleGameChoice(1)">Sambut Tamu dengan Ramah</button>
+                            <button class="game-btn danger" onclick="handleGameChoice(2)">Minta Biaya Tambahan di Depan</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- CALCULATOR TAB -->
+            <div id="calculator" class="content-section">
+                <button class="btn-back-home" onclick="switchTab('home', event)">🏠 Kembali ke Halaman Utama</button>
+                <div class="container">
+                    <div style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #0f172a 100%); padding: 2.2rem; text-align: center; border-bottom: 2px dashed rgba(56, 189, 248, 0.4);">
+                        <h1 style="color: #38bdf8; font-size: 1.8rem; margin-bottom: 0.4rem;">✨ Kalkulator Gaji Karyawan (Maks 1000 List) ✨</h1>
+                        <p style="color: #94a3b8;">Sistem Penghitungan Gaji Ceria, Cepat, dan Akurat</p>
+                    </div>
+                    <div class="form-content">
+                        <form id="salaryForm">
+                            <div class="grid-2">
+                                <div class="form-group">
+                                    <label for="nama">Nama Karyawan</label>
+                                    <input type="text" id="nama" placeholder="Masukkan nama lengkap" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="pendidikan">Pendidikan</label>
+                                    <select id="pendidikan" required>
+                                        <option value="" disabled selected>Pilih tingkat pendidikan</option>
+                                        <option value="SMA">SMA / SMK</option>
+                                        <option value="D3">Diploma (D3)</option>
+                                        <option value="S1">Sarjana (S1)</option>
+                                        <option value="S2">Magister (S2)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid-2">
+                                <div class="form-group form-group-short">
+                                    <label for="lamaKerja">Lama Bekerja (Tahun)</label>
+                                    <input type="number" id="lamaKerja" min="0" max="99" maxlength="2" placeholder="Contoh: 7" required>
+                                    <div id="lamaKerjaError" class="error-message">⚠️ Melewati batas tahun (Maksimal 25 tahun)!</div>
+                                </div>
+                                <div class="form-group form-group-short">
+                                    <label for="jumlahAnak">Jumlah Anak</label>
+                                    <input type="number" id="jumlahAnak" min="0" max="99" maxlength="2" placeholder="Contoh: 3" required>
+                                </div>
+                            </div>
+
+                            <div class="button-group">
+                                <button type="submit" id="btnSubmitCalc" class="btn-submit">Hitung & Simpan List ✨</button>
+                                <button type="button" class="btn-clear" onclick="clearCalculator()">Hapus Form 🗑️</button>
+                                <button type="button" id="btnDownloadExcel" class="btn-action btn-success" style="display:none;" onclick="downloadExcelXlsxTable()">Unduh ke Excel (.xlsx) 📊</button>
+                            </div>
+                        </form>
+
+                        <div id="resultSection" class="result-section">
+                            <div class="result-title">💖 Hasil Kalkulasi Terakhir 💖</div>
+                            <div class="result-grid">
+                                <div class="result-item"><span>Nama Karyawan</span><strong id="resNama">-</strong></div>
+                                <div class="result-item"><span>Gaji Pokok</span><strong id="resGapok">-</strong></div>
+                                <div class="result-item"><span>Tunjangan Masa Kerja</span><strong id="resTunjangan">-</strong></div>
+                                <div class="result-item"><span>Tunjangan Anak (7% Gapok)</span><strong id="resAnak">-</strong></div>
+                                <div class="result-item"><span>Premi (3% Gapok)</span><strong id="resPremi">-</strong></div>
+                                <div class="result-item"><span>Potongan PPH (3%)</span><strong id="resPph">-</strong></div>
+                                <div class="result-item highlight"><span>Total Gaji Bersih</span><strong id="resBersih">-</strong></div>
+                            </div>
+                        </div>
+
+                        <!-- Daftar List Histori di dalam Kalkulator (Maks 1000) dengan Tombol Edit & Hapus -->
+                        <div style="margin-top: 2rem;">
+                            <h3 style="color: #38bdf8; font-size: 1.1rem; margin-bottom: 0.8rem;">📜 Daftar List Karyawan Tersimpan (<span id="counterList">0</span>/1000)</h3>
+                            <div id="calcHistoryList" class="spotify-queue-container" style="max-height: 350px;">
+                                <div style="text-align: center; color: var(--text-muted); font-size: 0.85rem;">Belum ada list karyawan yang ditambahkan.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GALLERY TAB -->
+            <div id="gallery" class="content-section">
+                <button class="btn-back-home" onclick="switchTab('home', event)">🏠 Kembali ke Halaman Utama</button>
+                <div class="container" style="padding: 2.2rem;">
+                    <h2 style="color: #38bdf8; margin-bottom: 1.5rem; text-align:center;">🖼️ Galeri Suasana Kantor & Hotel</h2>
+                    <div class="gallery-grid">
+                        <div class="card-item">
+                            <img src="2137074-3840x2160-desktop-4k-hotel-transylvania-wallpaper-photo.jpg" alt="Wallpaper 1" onclick="openLightbox(this.src)">
+                            <a href="2137074-3840x2160-desktop-4k-hotel-transylvania-wallpaper-photo.jpg" download class="download-btn">Unduh 📥</a>
+                            <div class="card-title">Wallpaper 1</div>
+                        </div>
+                        <div class="card-item">
+                            <img src="2137104-3840x2160-desktop-4k-hotel-transylvania-background.jpg" alt="Wallpaper 2" onclick="openLightbox(this.src)">
+                            <a href="2137104-3840x2160-desktop-4k-hotel-transylvania-background.jpg" download class="download-btn">Unduh 📥</a>
+                            <div class="card-title">Wallpaper 2</div>
+                        </div>
+                        <div class="card-item">
+                            <img src="2137110-2880x1800-desktop-hd-hotel-transylvania-background.jpg" alt="Wallpaper 3" onclick="openLightbox(this.src)">
+                            <a href="2137110-2880x1800-desktop-hd-hotel-transylvania-background.jpg" download class="download-btn">Unduh 📥</a>
+                            <div class="card-title">Wallpaper 3</div>
+                        </div>
+                        <div class="card-item">
+                            <img src="2137151-3840x2160-desktop-4k-hotel-transylvania-background-photo.jpg" alt="Wallpaper 4" onclick="openLightbox(this.src)">
+                            <a href="2137151-3840x2160-desktop-4k-hotel-transylvania-background-photo.jpg" download class="download-btn">Unduh 📥</a>
+                            <div class="card-title">Wallpaper 4</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIDEOS TAB -->
+            <div id="videos" class="content-section">
+                <button class="btn-back-home" onclick="switchTab('home', event)">🏠 Kembali ke Halaman Utama</button>
+                <div class="container" style="padding: 2.2rem;">
+                    <h2 style="color: #38bdf8; margin-bottom: 1.5rem; text-align:center;">🎬 List Video Profil & Aktivitas</h2>
+                    <div class="video-grid">
+                        <div class="card-item">
+                            <video controls preload="metadata" onmouseover="this.play()" onmouseout="this.pause(); this.currentTime=0;">
+                                <source src="Hotel Transylvania 2 – Mavis _ Johnny Wedding Scene Beautiful Monster Wedding.mp4" type="video/mp4">
+                            </video>
+                            <div class="card-title">Mavis' Wedding</div>
+                        </div>
+                        <div class="card-item">
+                            <video controls preload="metadata" onmouseover="this.play()" onmouseout="this.pause(); this.currentTime=0;">
+                                <source src="hotel transylvania 2 (2015) - vlad traumatizes the kids at dennis birthday party.mp4" type="video/mp4">
+                            </video>
+                            <div class="card-title">Grandpa Vlad Comes</div>
+                        </div>
+                        <div class="card-item">
+                            <video controls preload="metadata" onmouseover="this.play()" onmouseout="this.pause(); this.currentTime=0;">
+                                <source src="Mavis Experiences Being A Regular Human Hotel Transylvania 2 Now Playing.mp4" type="video/mp4">
+                            </video>
+                            <div class="card-title">Mavis at California</div>
+                        </div>
+                        <div class="card-item">
+                            <video controls preload="metadata" onmouseover="this.play()" onmouseout="this.pause(); this.currentTime=0;">
+                                <source src="Spike Monster Wedding Hotel Transylvania 2.mp4" type="video/mp4">
+                            </video>
+                            <div class="card-title">Spike Monster's Wedding</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTACT SUPPORT TAB -->
+            <div id="contact" class="content-section">
+                <button class="btn-back-home" onclick="switchTab('home', event)">🏠 Kembali ke Halaman Utama</button>
+                <div class="support-card">
+                    <h2 style="color: #38bdf8; font-size: 1.6rem; text-align: center;">📞 Kontak Support Kantor</h2>
+                    <p style="color: var(--text-muted); text-align: center;">Tim support kami siap membantu Anda kapan saja dengan senang hati 24 jam non-stop.</p>
+                    <div class="support-contacts">
+                        <a href="https://wa.me/" target="_blank" class="contact-btn btn-whatsapp">📱 WhatsApp Support</a>
+                        <a href="mailto:support@perusahaan.com" class="contact-btn btn-email">✉️ Email Bantuan</a>
+                    </div>
+
+                    <div class="support-bottom-grid">
+                        <div class="support-info-box">
+                            <h3>📍 Alamat Kantor Utama</h3>
+                            <p><strong>Hotel Transylvania Corp.</strong><br>
+                            Jl. Kastil Bulan Purnama No. 666, Lantai 13, Transylvania Hills.<br>
+                            <em>Operasional:</em> Senin - Minggu (24 Jam Buka Khusus Monster & Manusia).</p>
+                        </div>
+                        <div class="support-info-box">
+                            <h3>💼 Lowongan Pekerjaan Terbaru</h3>
+                            <ul>
+                                <li><strong>Resepsionis Shift Malam</strong> (Kualifikasi: Tahan begadang, ramah ke zombie).</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- EMPLOYEE PROFILE MODAL -->
+    <div id="employeeModal" class="modal-overlay" onclick="closeEmployeeModal(event)">
+        <div class="modal-card">
+            <button class="modal-close" onclick="closeEmployeeModalDirect()">✕</button>
+            <h3 id="empName" class="modal-title">Profil Lengkap Pekerja</h3>
+            <div style="display: flex; gap: 1.5rem; align-items: flex-start; flex-wrap: wrap;">
+                <div style="font-size: 4rem; background: #1e293b; padding: 1rem; border-radius: 16px; border: 2px solid #38bdf8;" id="empAvatar">🧛‍♂️</div>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.95rem;">
+                    <div><strong>Jabatan:</strong> <span id="empRole" style="color: #38bdf8;">-</span></div>
+                    <div><strong>Email Korporat:</strong> <span id="empEmail" style="color: var(--text-muted);">-</span></div>
+                    <div><strong>Nomor Ekstensi Ruangan:</strong> <span id="empExt" style="color: var(--text-muted);">-</span></div>
+                    <div><strong>Jadwal Shift Kerja:</strong> <span id="empShift" style="color: var(--text-muted);">-</span></div>
+                    <div><strong>Riwayat & Kontribusi Utama:</strong> <span id="empBio" style="color: var(--text-muted);">-</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FINANCIAL EDIT & QUEUE MODAL -->
+    <div id="financeModal" class="modal-overlay" onclick="closeFinanceModal(event)">
+        <div class="modal-card">
+            <button class="modal-close" onclick="closeFinanceModalDirect()">✕</button>
+            <h3 id="financeModalTitle" class="modal-title">Edit & Simpan Laporan Keuangan</h3>
+            <div class="edit-form-group">
+                <label id="financeInputLabel">Nilai Baru (Ketik angka asal):</label>
+                <input type="text" id="financeInputValue" placeholder="Ketik angka, otomatis menjadi mata uang..." oninput="autoFormatCurrency(this)">
+            </div>
+            <div class="edit-form-group">
+                <label>Keterangan / Catatan Revisi:</label>
+                <textarea id="financeInputNote" rows="2" placeholder="Catat sumber atau revisi anggaran..."></textarea>
+            </div>
+            <button class="btn-action" onclick="saveFinanceEdit()">Simpan ke List Riwayat 💾</button>
+            
+            <div style="margin-top: 1rem;">
+                <h4 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 0.5rem;">🎵 List Riwayat Perubahan Keuangan:</h4>
+                <div id="spotifyQueue" class="spotify-queue-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ROOM BOOKING & 5 DISTINCT IMGS PER ROOM -->
+    <div id="roomModal" class="modal-overlay" onclick="closeRoomModal(event)">
+        <div class="modal-card" style="max-width: 750px;">
+            <button class="modal-close" onclick="closeRoomModalDirect()">✕</button>
+            <h3 id="roomModalTitle" class="modal-title">Detail Kamar & Pemesanan Eksklusif</h3>
+            
+            <div class="carousel-container">
+                <button class="carousel-btn carousel-prev" onclick="moveSlide(-1)">❮</button>
+                <button class="carousel-btn carousel-next" onclick="moveSlide(1)">❯</button>
+                <img id="roomImg1" class="carousel-slide active" src="" alt="Foto Kamar 1">
+                <img id="roomImg2" class="carousel-slide" src="" alt="Foto Kamar 2">
+                <img id="roomImg3" class="carousel-slide" src="" alt="Foto Kamar 3">
+                <img id="roomImg4" class="carousel-slide" src="" alt="Foto Kamar 4">
+                <img id="roomImg5" class="carousel-slide" src="" alt="Foto Kamar 5">
+            </div>
+
+            <div id="roomModalFeatures" class="room-features" style="margin-top: 0.5rem;"></div>
+
+            <div style="background: #0f172a; border: 1px solid #334155; border-radius: 16px; padding: 1.2rem; display: flex; flex-direction: column; gap: 1rem; margin-top: 0.5rem;">
+                <h4 style="color: #38bdf8; font-size: 1.05rem;">📝 Formulir Pemesanan Tamu Kastil</h4>
+                <div class="grid-2" style="margin-bottom: 0;">
+                    <div class="edit-form-group" style="margin-bottom:0;">
+                        <label>Nama Pemesan:</label>
+                        <input type="text" id="bookName" placeholder="Masukkan nama tamu">
+                    </div>
+                    <div class="edit-form-group" style="margin-bottom:0;">
+                        <label>Jumlah Anggota Keluarga:</label>
+                        <input type="number" id="bookFamily" min="1" value="1" oninput="calculateTotal()">
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.8); padding: 0.8rem 1rem; border-radius: 10px;">
+                    <span style="font-size: 0.95rem;">Total Estimasi:</span>
+                    <strong id="bookTotalEstimate" style="color: #34d399; font-size: 1.1rem;">Rp 2.500.000</strong>
+                </div>
+
+                <div id="bookingActionArea" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <button class="btn-action" onclick="openBcaLogin()">Pembayaran BCA-only 💳</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT ENTRY MODAL -->
+    <div id="editEntryModal" class="modal-overlay" onclick="closeEditEntryModal(event)">
+        <div class="modal-card" style="max-width: 480px;">
+            <button class="modal-close" onclick="closeEditEntryModalDirect()">✕</button>
+            <h3 class="modal-title">✏️ Edit Data Karyawan</h3>
+            <input type="hidden" id="editIndex">
+            <div class="edit-form-group">
+                <label>Nama Karyawan</label>
+                <input type="text" id="editNama" placeholder="Nama lengkap">
+            </div>
+            <div class="edit-form-group">
+                <label>Pendidikan</label>
+                <select id="editPendidikan">
+                    <option value="SMA">SMA / SMK</option>
+                    <option value="D3">Diploma (D3)</option>
+                    <option value="S1">Sarjana (S1)</option>
+                    <option value="S2">Magister (S2)</option>
+                </select>
+            </div>
+            <div class="edit-form-group">
+                <label>Lama Kerja (Tahun - Maks 25)</label>
+                <input type="number" id="editLamaKerja" min="0" max="25">
+            </div>
+            <div class="edit-form-group">
+                <label>Jumlah Anak</label>
+                <input type="number" id="editJumlahAnak" min="0" max="99">
+            </div>
+            <button class="btn-action" onclick="saveEditedEntry()">Simpan Perubahan ✅</button>
+        </div>
+    </div>
+
+    <!-- Small Audio Player at Bottom Right Corner -->
+    <div class="corner-audio-player">
+        <span style="font-size: 1.1rem;">🎵</span>
+        <audio controls>
+            <source src="Fifth Harmony - Im In Love With a Monster (from Hotel Transylvania 2 - Official Video).mp3" type="audio/mpeg">
+            Browser Anda tidak mendukung audio.
+        </audio>
+    </div>
+
+    <!-- Lightbox Modal for Gallery -->
+    <div id="lightboxModal" class="lightbox-modal" onclick="closeLightbox()">
+        <button class="lightbox-close">✕</button>
+        <img id="lightboxImg" class="lightbox-img" src="" alt="Fullscreen">
+    </div>
+
+    <script>
+        // Login & Logout Handlers
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const user = document.getElementById('usernameInput').value.trim();
+            const pswd = document.getElementById('passwordInput').value.trim();
+            const errorBox = document.getElementById('loginError');
+
+            if (user === 'admin' && pswd === '1234') {
+                errorBox.classList.remove('active');
+                document.getElementById('loginScreen').classList.add('hidden');
+                triggerConfetti();
+            } else {
+                errorBox.classList.add('active');
+            }
+        });
+
+        function handleLogout() {
+            document.getElementById('usernameInput').value = '';
+            document.getElementById('passwordInput').value = '';
+            document.getElementById('loginScreen').classList.remove('hidden');
+            switchTab('home');
+        }
+
+        // Tab Switcher Handler
+        function switchTab(tabId, event) {
+            if(event) event.preventDefault();
+            document.querySelectorAll('.content-section').forEach(sec => {
+                sec.classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --- EMPLOYEE PROFILES ---
+        const employeeData = {
+            dracula: {
+                name: "Count Dracula - Manager Utama",
+                avatar: "🧛‍♂️",
+                role: "Manager Utama & Pemilik Hotel",
+                email: "dracula@hoteltransylvania.com",
+                ext: "Ext. 666",
+                shift: "Shift Malam Utama (18:00 - 06:00)",
+                bio: "Pendiri legendaris Hotel Transylvania. Berdedikasi penuh melindungi monster dari kejaran manusia sekaligus memastikan profitabilitas kastil."
+            },
+            mavis: {
+                name: "Mavis Dracula - HRD & Humas",
+                avatar: "🦇",
+                role: "Direktur HRD & Humas Korporat",
+                email: "mavis@hoteltransylvania.com",
+                ext: "Ext. 1313",
+                shift: "Shift Fleksibel (24 Jam Siaga)",
+                bio: "Inovator muda yang membawa angin segar pembaruan wisata ramah manusia serta mengelola kesejahteraan seluruh staf zombie dan monster."
+            },
+            jonathan: {
+                name: "Jonathan Loughran - Event & Kreatif",
+                avatar: "🎸",
+                role: "Kepala Divisi Kreatif & Hiburan",
+                email: "johnny@hoteltransylvania.com",
+                ext: "Ext. 777",
+                shift: "Shift Sore & Malam (15:00 - 03:00)",
+                bio: "Penggerak utama konser musik rock hantu, pesta dansa malam bulan purnama, dan pencipta keseruan tanpa batas di hotel."
+            },
+            frankenstein: {
+                name: "Frankenstein - Keamanan & Teknik",
+                avatar: "⚡",
+                role: "Kepala Keamanan & Sistem Kelistrikan Petir",
+                email: "frank@hoteltransylvania.com",
+                ext: "Ext. 404",
+                shift: "Shift Siang & Siaga Badai (12:00 - 00:00)",
+                bio: "Bertanggung jawab atas pasokan listrik utama kastil dari sambaran petir badai serta memastikan keamanan perimeter luar."
+            },
+            wayne: {
+                name: "Wayne Werewolf - Logistik & Tamu",
+                avatar: "🐺",
+                role: "Koordinator Logistik & Layanan Tamu",
+                email: "wayne@hoteltransylvania.com",
+                ext: "Ext. 555",
+                shift: "Shift Pagi & Patroli (06:00 - 18:00)",
+                bio: "Mengatur kedatangan ratusan anak werewolf dan memastikan ketersediaan suplai daging segar serta kamar yang nyaman."
+            }
+        };
+
+        function openEmployeeModal(key) {
+            const emp = employeeData[key];
+            document.getElementById('empName').innerText = emp.name;
+            document.getElementById('empAvatar').innerText = emp.avatar;
+            document.getElementById('empRole').innerText = emp.role;
+            document.getElementById('empEmail').innerText = emp.email;
+            document.getElementById('empExt').innerText = emp.ext;
+            document.getElementById('empShift').innerText = emp.shift;
+            document.getElementById('empBio').innerText = emp.bio;
+            document.getElementById('employeeModal').classList.add('active');
+        }
+
+        function closeEmployeeModal(e) {
+            if (e.target === document.getElementById('employeeModal')) {
+                document.getElementById('employeeModal').classList.remove('active');
+            }
+        }
+        function closeEmployeeModalDirect() {
+            document.getElementById('employeeModal').classList.remove('active');
+        }
+
+        // --- AUTOMATIC CURRENCY FORMATTER ---
+        function autoFormatCurrency(input) {
+            let cleanVal = input.value.replace(/[^0-9]/g, '');
+            if (!cleanVal) {
+                input.value = '';
+                return;
+            }
+            let numberVal = parseInt(cleanVal, 10);
+            input.value = 'Rp ' + numberVal.toLocaleString('id-ID');
+        }
+
+        // --- FINANCIAL EDIT & QUEUE ---
+        let currentFinanceType = '';
+        let financeQueue = [
+            { id: 1, type: 'Pendapatan Hotel', value: 'Rp 850.000.000', note: 'Pendapatan awal bulan stabil' },
+            { id: 2, type: 'Pengeluaran Operasional', value: 'Rp 320.000.000', note: 'Biaya petir & logistik' },
+            { id: 3, type: 'Total Pembayaran Gaji', value: 'Rp 180.000.000', note: 'Gaji staf & manager' },
+            { id: 4, type: 'Laba Bersih', value: 'Rp 350.000.000', note: 'Laba bersih setelah pajak' }
+        ];
+
+        const financeTitles = {
+            pendapatan: "Edit Laporan: Pendapatan Hotel",
+            operasional: "Edit Laporan: Pengeluaran Operasional",
+            gaji: "Edit Laporan: Total Pembayaran Gaji",
+            laba: "Edit Laporan: Laba Bersih"
+        };
+
+        function openFinanceModal(type) {
+            currentFinanceType = type;
+            document.getElementById('financeModalTitle').innerText = financeTitles[type];
+            document.getElementById('financeInputLabel').innerText = `Nilai Baru untuk ${type.toUpperCase()} (Ketik angka asal):`;
+            document.getElementById('financeInputValue').value = '';
+            document.getElementById('financeInputNote').value = '';
+            renderSpotifyQueue();
+            document.getElementById('financeModal').classList.add('active');
+        }
+
+        function closeFinanceModal(e) {
+            if (e.target === document.getElementById('financeModal')) {
+                document.getElementById('financeModal').classList.remove('active');
+            }
+        }
+        function closeFinanceModalDirect() {
+            document.getElementById('financeModal').classList.remove('active');
+        }
+
+        function saveFinanceEdit() {
+            let val = document.getElementById('financeInputValue').value.trim();
+            const note = document.getElementById('financeInputNote').value.trim();
+            if (!val) {
+                alert("Masukkan nilai Rupiah terlebih dahulu!");
+                return;
+            }
+
+            let cleanDigits = val.replace(/[^0-9]/g, '');
+            if (cleanDigits) {
+                val = 'Rp ' + parseInt(cleanDigits, 10).toLocaleString('id-ID');
+            }
+
+            const typeNameMap = {
+                pendapatan: 'Pendapatan Hotel',
+                operasional: 'Pengeluaran Operasional',
+                gaji: 'Total Pembayaran Gaji',
+                laba: 'Laba Bersih'
+            };
+
+            const typeDisplayKey = {
+                pendapatan: 'displayPendapatan',
+                operasional: 'displayOperasional',
+                gaji: 'displayGaji',
+                laba: 'displayLaba'
+            };
+
+            document.getElementById(typeDisplayKey[currentFinanceType]).innerText = val;
+
+            const newItem = {
+                id: Date.now(),
+                type: typeNameMap[currentFinanceType],
+                value: val,
+                note: note || 'Pembaruan mandiri admin'
+            };
+            financeQueue.push(newItem);
+            renderSpotifyQueue();
+            document.getElementById('financeInputValue').value = '';
+            document.getElementById('financeInputNote').value = '';
+        }
+
+        function renderSpotifyQueue() {
+            const queueContainer = document.getElementById('spotifyQueue');
+            if (financeQueue.length === 0) {
+                queueContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.85rem;">Antrean kosong.</div>`;
+                return;
+            }
+            queueContainer.innerHTML = financeQueue.map((item, index) => `
+                <div class="spotify-queue-item">
+                    <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                        <strong>#${index + 1} [${item.type}]: ${item.value}</strong>
+                        <span style="font-size: 0.82rem; color: var(--text-muted); font-style: italic;">📝 Catatan: "${item.note}"</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // --- ROOM BOOKING & 5 DISTINCT IMGS PER ROOM ---
+        const roomData = {
+            kamarVIP: {
+                title: "🏨 Kamar VIP Kastil (Rp 2.500.000 / malam)",
+                basePrice: 2500000,
+                features: "<strong>Fasilitas Kamar VIP Kastil:</strong><br>• Peti mati beludru merah anti-matahari.<br>• Pemandangan jurang Transylvania Hills.<br>• Pelayanan kepala pelayan kelelawar 24 jam.<br>• Suhu kamar konstan di bawah 10°C.",
+                images: [
+                    "2137074-3840x2160-desktop-4k-hotel-transylvania-wallpaper-photo.jpg",
+                    "2137104-3840x2160-desktop-4k-hotel-transylvania-background.jpg",
+                    "2137110-2880x1800-desktop-hd-hotel-transylvania-background.jpg",
+                    "2137151-3840x2160-desktop-4k-hotel-transylvania-background-photo.jpg",
+                    "2137227-3549x1920-desktop-hd-hotel-transylvania-wallpaper.jpg"
+                ]
+            },
+            nikahMonster: {
+                title: "💍 Paket Pernikahan Monster (Rp 45.000.000)",
+                basePrice: 45000000,
+                features: "<strong>Fasilitas Paket Pernikahan:</strong><br>• Dekorasi aula bertema bulan purnama.<br>• Kue pernikahan lapis darah 7 tingkat.<br>• Orkestra hantu & zombie rock.<br>• Dokumentasi drone kelelawar.",
+                images: [
+                    "2137104-3840x2160-desktop-4k-hotel-transylvania-background.jpg",
+                    "2137074-3840x2160-desktop-4k-hotel-transylvania-wallpaper-photo.jpg",
+                    "2137227-3549x1920-desktop-hd-hotel-transylvania-wallpaper.jpg",
+                    "2137110-2880x1800-desktop-hd-hotel-transylvania-background.jpg",
+                    "2137151-3840x2160-desktop-4k-hotel-transylvania-background-photo.jpg"
+                ]
+            },
+            turPurnama: {
+                title: "🌕 Tur Wisata Bulan Purnama (Rp 750.000 / orang)",
+                basePrice: 750000,
+                features: "<strong>Fasilitas Tur Wisata:</strong><br>• Dipandu pawang werewolf senior.<br>• Akses hutan larangan Transylvania.<br>• Jimat penangkal monster liar.<br>• Cendera mata taring perak.",
+                images: [
+                    "2137110-2880x1800-desktop-hd-hotel-transylvania-background.jpg",
+                    "2137151-3840x2160-desktop-4k-hotel-transylvania-background-photo.jpg",
+                    "2137074-3840x2160-desktop-4k-hotel-transylvania-wallpaper-photo.jpg",
+                    "2137104-3840x2160-desktop-4k-hotel-transylvania-background.jpg",
+                    "2137227-3549x1920-desktop-hd-hotel-transylvania-wallpaper.jpg"
+                ]
+            },
+            spaTengkorak: {
+                title: "💆 Spa & Pijat Tengkorak (Rp 500.000 / sesi)",
+                basePrice: 500000,
+                features: "<strong>Fasilitas Spa:</strong><br>• Pijatan herbal mistis.<br>• Masker lumpur rawa hitam.<br>• Sauna belerang vulkanik.<br>• Relaksasi otot total.",
+                images: [
+                    "2137151-3840x2160-desktop-4k-hotel-transylvania-background-photo.jpg",
+                    "2137227-3549x1920-desktop-hd-hotel-transylvania-wallpaper.jpg",
+                    "2137074-3840x2160-desktop-4k-hotel-transylvania-wallpaper-photo.jpg",
+                    "2137104-3840x2160-desktop-4k-hotel-transylvania-background.jpg",
+                    "2137110-2880x1800-desktop-hd-hotel-transylvania-background.jpg"
+                ]
+            }
+        };
+
+        let currentBookingData = {
+            roomTitle: '',
+            price: 0,
+            name: '',
+            familyCount: 1,
+            finalPrice: 0
+        };
+
+        function openRoomModal(type) {
+            const data = roomData[type];
+            currentBookingData.roomTitle = data.title;
+            currentBookingData.price = data.basePrice;
+
+            document.getElementById('roomModalTitle').innerText = data.title;
+            document.getElementById('roomModalFeatures').innerHTML = data.features;
+            
+            for (let i = 1; i <= 5; i++) {
+                document.getElementById('roomImg' + i).src = data.images[i - 1];
+            }
+
+            document.getElementById('bookName').value = 'Count Dracula & Keluarga';
+            document.getElementById('bookFamily').value = 3;
+            calculateTotal();
+
+            document.getElementById('bookingActionArea').innerHTML = `
+                <button class="btn-action" onclick="openBcaLogin()">Pembayaran BCA-only 💳</button>
+            `;
+
+            currentSlide = 0;
+            updateCarousel();
+            document.getElementById('roomModal').classList.add('active');
+        }
+
+        function closeRoomModal(e) {
+            if (e.target === document.getElementById('roomModal')) {
+                document.getElementById('roomModal').classList.remove('active');
+            }
+        }
+        function closeRoomModalDirect() {
+            document.getElementById('roomModal').classList.remove('active');
+        }
+
+        function calculateTotal() {
+            const familyCount = parseInt(document.getElementById('bookFamily').value) || 1;
+            let subtotal = currentBookingData.price * familyCount;
+            let discount = familyCount >= 3 ? 0.15 : 0;
+            let total = subtotal * (1 - discount);
+            currentBookingData.familyCount = familyCount;
+            currentBookingData.finalPrice = total;
+
+            const formatRupiah = (angka) => 'Rp ' + angka.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            document.getElementById('bookTotalEstimate').innerText = formatRupiah(total) + (discount > 0 ? ` (Diskon ${discount*100}%)` : '');
+        }
+
+        let bcaWindow = null;
+        function openBcaLogin() {
+            const name = document.getElementById('bookName').value.trim();
+            if (!name) {
+                alert("Harap masukkan nama pemesan terlebih dahulu!");
+                return;
+            }
+            currentBookingData.name = name;
+
+            const bcaUrl = "https://ibank.klikbca.com/";
+            bcaWindow = window.open(bcaUrl, '_blank', 'width=500,height=600');
+
+            document.getElementById('bookingActionArea').innerHTML = `
+                <button class="btn-action btn-success" onclick="verifyBcaPayment()">Verifikasi Pembayaran BCA-only ✅</button>
+                <span style="font-size: 0.85rem; color: var(--text-muted); align-self: center;">(Selesaikan login di tab KlikBCA, lalu klik verifikasi)</span>
+            `;
+        }
+
+        function verifyBcaPayment() {
+            if (bcaWindow && bcaWindow.closed) {
+                alert("Tab KlikBCA telah ditutup. Verifikasi pembayaran berhasil!");
+            } else {
+                alert("Verifikasi pembayaran BCA-only diterima dengan sukses!");
+            }
+
+            document.getElementById('bookingActionArea').innerHTML = `
+                <div style="background: rgba(52, 211, 153, 0.15); border: 1px solid #34d399; padding: 0.8rem 1rem; border-radius: 10px; width: 100%; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem;">
+                    <strong style="color: #34d399; font-size: 1.05rem;">🎉 Pembayaran diterima!</strong>
+                    <button class="btn-action btn-success" onclick="downloadPdfTicket()">Unduh Tiket PDF Resmi 📥</button>
+                </div>
+            `;
+        }
+
+        // --- PDF TICKET GENERATION ---
+        function downloadPdfTicket() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFillColor(15, 23, 42);
+            doc.rect(0, 0, 210, 40, 'F');
+            doc.setTextColor(56, 189, 248);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(22);
+            doc.text("HOTEL TRANSYLVANIA RESORT", 105, 20, { align: "center" });
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            doc.setTextColor(148, 163, 184);
+            doc.text("Jl. Kastil Bulan Purnama No. 666, Lantai 13, Transylvania Hills", 105, 28, { align: "center" });
+            doc.text("E-Ticket Resmi Pemesanan Kamar (BCA Secure)", 105, 34, { align: "center" });
+
+            doc.setDrawColor(56, 189, 248);
+            doc.setLineWidth(1);
+            doc.line(20, 48, 190, 48);
+
+            doc.setTextColor(15, 23, 42);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(14);
+            doc.text("DETAIL RESERVASI TAMU", 20, 60);
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(11);
+            let startY = 70;
+            const details = [
+                ["Nomor Tiket / Booking ID:", "HTX-BCA-" + Math.floor(100000 + Math.random() * 900000)],
+                ["Nama Tamu Utama:", currentBookingData.name],
+                ["Jumlah Anggota Rombongan:", currentBookingData.familyCount + " Orang"],
+                ["Layanan / Kamar Dipesan:", currentBookingData.roomTitle],
+                ["Tanggal Check-in:", "15 Oktober 2026 (14:00 CET)"],
+                ["Tanggal Check-out:", "18 Oktober 2026 (12:00 CET)"],
+                ["Status Pembayaran:", "LUNAS (Verifikasi KlikBCA Secure)"],
+                ["Total Biaya Dibayarkan:", "Rp " + currentBookingData.finalPrice.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.')]
+            ];
+
+            details.forEach(item => {
+                doc.setFont("helvetica", "bold");
+                doc.text(item[0], 20, startY);
+                doc.setFont("helvetica", "normal");
+                doc.text(item[1], 90, startY);
+                startY += 10;
+            });
+
+            doc.setDrawColor(148, 163, 184);
+            doc.setFillColor(248, 250, 252);
+            doc.roundedRect(20, startY + 5, 170, 45, 3, 3, 'FD');
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(10);
+            doc.setTextColor(15, 23, 42);
+            doc.text("Syarat & Ketentuan Penting:", 25, startY + 13);
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            doc.setTextColor(100, 116, 139);
+            const terms = [
+                "1. Wajib menunjukkan e-ticket ini saat memasuki gerbang utama kastil.",
+                "2. Dilarang membawa bawang putih atau salib ke dalam area kamar VIP.",
+                "3. Layanan pelayan kelelawar dapat dipanggil kapan saja melalui tombol darurat.",
+                "4. Pemesanan yang sudah lunas tidak dapat diuangkan kembali (Non-Refundable)."
+            ];
+            let termY = startY + 20;
+            terms.forEach(t => {
+                doc.text(t, 25, termY);
+                termY += 6;
+            });
+
+            doc.save("E-Ticket-Hotel-Transylvania-BCA.pdf");
+        }
+
+        // --- CAROUSEL & SLIDE ---
+        let currentSlide = 0;
+        function moveSlide(direction) {
+            const slides = document.querySelectorAll('.carousel-slide');
+            currentSlide += direction;
+            if (currentSlide >= slides.length) currentSlide = 0;
+            if (currentSlide < 0) currentSlide = slides.length - 1;
+            updateCarousel();
+        }
+
+        function updateCarousel() {
+            const slides = document.querySelectorAll('.carousel-slide');
+            slides.forEach((slide, index) => {
+                slide.classList.toggle('active', index === currentSlide);
+            });
+        }
+
+        // --- CONFETTI ---
+        function triggerConfetti() {
+            const colors = ['#38bdf8', '#818cf8', '#f43f5e', '#34d399', '#fbbf24'];
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 3;
+
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti-piece';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.left = centerX + 'px';
+                confetti.style.top = centerY + 'px';
+
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 80 + Math.random() * 250;
+                const tx = Math.cos(angle) * distance;
+                const ty = Math.sin(angle) * distance;
+
+                confetti.style.setProperty('--tx', tx + 'px');
+                confetti.style.setProperty('--ty', ty + 'px');
+
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 1200);
+            }
+        }
+
+        // --- MINIGAME RPG ---
+        let gameState = { hp: 100, money: 5000000, rep: 50, node: 0 };
+        const gameNodes = [
+            { text: "Shift malam dimulai! Count Dracula mengawasimu di lobby utama. Ada dua tamu VIP datang bersamaan.", emoji: "🧛‍♂️", btn1Text: "Sambut Tamu dengan Ramah", btn2Text: "Minta Biaya Tambahan di Depan", action1: 1, action2: 2 },
+            { text: "Tamu menyukainya! Reputasi hotel naik, tapi ada masalah baru: Sekelompok Werewolf kelaparan mengamuk di lorong.", emoji: "🐺", btn1Text: "Belikan Daging Sapi Segar", btn2Text: "Tegur Mereka dengan Keras", action1: 3, action2: 4 },
+            { text: "Tamu kesal dan meninggalkan ulasan buruk! Kas hotel bertambah tapi reputasi anjlok drastis.", emoji: "💢", btn1Text: "Minta Maaf & Beri Kompensasi", btn2Text: "Abaikan Komplain Mereka", action1: 1, action2: 5 },
+            { text: "Daging habis dibeli. Para Werewolf tenang, namun anggaran kas hotel semakin menipis menjelang pagi.", emoji: "🍖", btn1Text: "Lanjutkan Patroli ke Lantai Atas", btn2Text: "Istirahat Sekejap di Resepsionis", action1: 6, action2: 7 },
+            { text: "Werewolf marah besar dan menyerangmu! Nyawamu berkurang banyak karena perkelahian.", emoji: "💥", btn1Text: "Lawan Balik dengan Sapu", btn2Text: "Lari Menyelamatkan Diri", action1: 8, action2: 9 },
+            { text: "Ulasan bintang 1 membanjiri internet! Count Dracula memecatmu.", emoji: "💀", isLoss: true, btn1Text: "Main Lagi 🔄", btn2Text: "Kembali ke Beranda 🏠", action1: 0, action2: 'home' },
+            { text: "Patroli sukses! Kamu menemukan artefak emas di lorong kastil dan menjualnya ke kolektor monster.", emoji: "🏆", isWin: true, btn1Text: "Main Lagi 🔄", btn2Text: "Kembali ke Beranda 🏠", action1: 0, action2: 'home' },
+            { text: "Saat tidur, pencuri hantu mencuri seluruh kas hotel! Kamu kalah total.", emoji: "👻", isLoss: true, btn1Text: "Main Lagi 🔄", btn2Text: "Kembali ke Beranda 🏠", action1: 0, action2: 'home' },
+            { text: "Kamu berhasil mengusir Werewolf nakal! Count Dracula memberimu bonus.", emoji: "🎉", isWin: true, btn1Text: "Main Lagi 🔄", btn2Text: "Kembali ke Beranda 🏠", action1: 0, action2: 'home' },
+            { text: "Kamu kabur ke ruang bawah tanah dan terjebak bersama monster laba-laba.", emoji: "🕷️", isLoss: true, btn1Text: "Main Lagi 🔄", btn2Text: "Kembali ke Beranda 🏠", action1: 0, action2: 'home' }
+        ];
+
+        function handleGameChoice(choice) {
+            let current = gameNodes[gameState.node];
+            if (current.isWin || current.isLoss) {
+                if (choice === 1) {
+                    gameState.hp = 100; gameState.money = 5000000; gameState.rep = 50; gameState.node = 0;
+                } else {
+                    switchTab('home'); gameState.hp = 100; gameState.money = 5000000; gameState.rep = 50; gameState.node = 0;
+                }
+            } else {
+                if (gameState.node === 0) { gameState.node = (choice === 1) ? 1 : 2; }
+                else if (gameState.node === 1) {
+                    if (choice === 1) { gameState.rep += 20; gameState.node = 3; }
+                    else { gameState.money += 2000000; gameState.rep -= 30; gameState.node = 2; }
+                } else if (gameState.node === 2) {
+                    if (choice === 1) { gameState.money -= 1500000; gameState.node = 1; }
+                    else { gameState.node = 5; }
+                } else if (gameState.node === 3) {
+                    gameState.node = (choice === 1) ? 6 : 7;
+                } else if (gameState.node === 4) {
+                    if (choice === 1) { gameState.hp -= 40; gameState.node = 8; }
+                    else { gameState.node = 9; }
+                }
+            }
+            updateGameUI();
+        }
+
+        function updateGameUI() {
+            const node = gameNodes[gameState.node];
+            document.getElementById('statHp').innerText = gameState.hp;
+            document.getElementById('statMoney').innerText = gameState.money.toLocaleString('id-ID');
+            document.getElementById('statRep').innerText = gameState.rep;
+            document.getElementById('gameEmoji').innerText = node.emoji;
+            document.getElementById('gameText').innerText = node.text;
+            document.getElementById('gameButtonsArea').innerHTML = `
+                <button class="game-btn" onclick="handleGameChoice(1)">${node.btn1Text}</button>
+                <button class="game-btn ${node.isLoss ? 'danger' : ''}" onclick="handleGameChoice(2)">${node.btn2Text}</button>
+            `;
+            if (gameState.hp <= 0 || gameState.rep <= 0) {
+                gameState.node = 5;
+                updateGameUI();
+            }
+        }
+
+        // --- KALKULATOR GAJI & LIST MAKS 1000 & BATAS 25 TAHUN (Edit & Hapus) ---
+        let salaryHistoryList = [];
+
+        document.getElementById('salaryForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            if (salaryHistoryList.length >= 1000) {
+                alert("Peringatan: Batas maksimal 1000 list karyawan telah tercapai!");
+                return;
+            }
+
+            const lamaKerja = parseInt(document.getElementById('lamaKerja').value) || 0;
+            const nama = document.getElementById('nama').value.trim();
+            const pendidikan = document.getElementById('pendidikan').value;
+            const jumlahAnak = parseInt(document.getElementById('jumlahAnak').value) || 0;
+            const errorBox = document.getElementById('lamaKerjaError');
+
+            if (lamaKerja > 25) {
+                errorBox.classList.add('active');
+                alert("⚠️ Peringatan: Melewati batas tahun kerja maksimal (25 tahun)! Silakan perbaiki angka lama bekerja.");
+                return;
+            } else {
+                errorBox.classList.remove('active');
+            }
+
+            let calcResult = calculateSalaryDetails(lamaKerja, jumlahAnak);
+
+            const record = {
+                no: salaryHistoryList.length + 1,
+                nama: nama,
+                pendidikan: pendidikan,
+                lamaKerja: lamaKerja,
+                jumlahAnak: jumlahAnak,
+                gapok: calcResult.gapok,
+                tunjanganLamaKerja: calcResult.tunjanganLamaKerja,
+                tunjanganAnak: calcResult.tunjanganAnak,
+                premi: calcResult.premi,
+                pph: calcResult.pph,
+                gajiBersih: calcResult.gajiBersih
+            };
+
+            salaryHistoryList.push(record);
+
+            document.getElementById('resNama').innerText = nama;
+            document.getElementById('resGapok').innerText = formatRupiahStr(record.gapok);
+            document.getElementById('resTunjangan').innerText = formatRupiahStr(record.tunjanganLamaKerja);
+            document.getElementById('resAnak').innerText = formatRupiahStr(record.tunjanganAnak);
+            document.getElementById('resPremi').innerText = formatRupiahStr(record.premi);
+            document.getElementById('resPph').innerText = formatRupiahStr(record.pph);
+            document.getElementById('resBersih').innerText = formatRupiahStr(record.gajiBersih);
+            document.getElementById('resultSection').classList.add('active');
+
+            renderHistoryLists();
+        });
+
+        function calculateSalaryDetails(lamaKerja, jumlahAnak) {
+            let gapok = lamaKerja >= 16 ? 6000000 : lamaKerja >= 11 ? 4500000 : lamaKerja >= 5 ? 3000000 : 2500000;
+            let tunjanganLamaKerja = lamaKerja >= 15 ? 300000 : 150000;
+            let tunjanganAnak = jumlahAnak >= 3 ? 0.07 * gapok : 0;
+            let premi = 0.03 * gapok;
+            let totalPenerimaan = gapok + tunjanganLamaKerja + tunjanganAnak + premi;
+            let pph = 0.03 * totalPenerimaan;
+            let gajiBersih = totalPenerimaan - pph;
+
+            return { gapok, tunjanganLamaKerja, tunjanganAnak, premi, pph, gajiBersih };
+        }
+
+        function formatRupiahStr(angka) {
+            return 'Rp ' + angka.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, '.').replace('.', ',');
+        }
+
+        function renderHistoryLists() {
+            const calcListContainer = document.getElementById('calcHistoryList');
+            document.getElementById('counterList').innerText = salaryHistoryList.length;
+
+            if (salaryHistoryList.length === 0) {
+                calcListContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.85rem;">Belum ada list karyawan yang ditambahkan.</div>`;
+            } else {
+                calcListContainer.innerHTML = salaryHistoryList.map((item, idx) => `
+                    <div class="spotify-queue-item">
+                        <div style="display: flex; flex-direction: column; gap: 0.2rem; flex: 1;">
+                            <strong>#${idx + 1} - ${item.nama} (${item.pendidikan}, ${item.lamaKerja} Tahun, ${item.jumlahAnak} Anak)</strong>
+                            <span style="font-size: 0.82rem; color: var(--text-muted);">
+                                Gaji Pokok: ${formatRupiahStr(item.gapok)} | Tunj. Kerja: ${formatRupiahStr(item.tunjanganLamaKerja)} | Tunj. Anak: ${formatRupiahStr(item.tunjanganAnak)} | Premi: ${formatRupiahStr(item.premi)} | PPH (3%): ${formatRupiahStr(item.pph)}
+                            </span>
+                            <span style="font-size: 0.85rem; color: #38bdf8; font-weight: 700;">Gaji Bersih: ${formatRupiahStr(item.gajiBersih)}</span>
+                        </div>
+                        <div style="display: flex; gap: 0.4rem;">
+                            <button class="btn-warning-sm" onclick="openEditEntryModal(${idx})">Edit ✏️</button>
+                            <button class="btn-danger-sm" onclick="deleteEntry(${idx})">Hapus 🗑️</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            const homeContainer = document.getElementById('homeHistoryContainer');
+            if (salaryHistoryList.length === 0) {
+                homeContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.9rem;">Belum ada data perhitungan gaji yang tersimpan. Silakan gunakan Kalkulator Gaji!</div>`;
+            } else {
+                homeContainer.innerHTML = salaryHistoryList.map((item, idx) => `
+                    <div style="background: rgba(30, 41, 59, 0.8); padding: 0.8rem 1rem; border-radius: 12px; border-left: 4px solid #38bdf8; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;">
+                        <div>
+                            <strong>#${idx + 1} ${item.nama}</strong> (${item.pendidikan} - ${item.lamaKerja} Tahun)<br>
+                            <span style="font-size: 0.82rem; color: var(--text-muted);">Anak: ${item.jumlahAnak} | PPH: ${formatRupiahStr(item.pph)} | Tunj. Kerja: ${formatRupiahStr(item.tunjanganLamaKerja)}</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="color: #34d399; font-weight: 700;">${formatRupiahStr(item.gajiBersih)}</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            const btnExcel = document.getElementById('btnDownloadExcel');
+            if (salaryHistoryList.length > 1) {
+                btnExcel.style.display = 'inline-flex';
+            } else {
+                btnExcel.style.display = 'none';
+            }
+        }
+
+        // --- EDIT & DELETE ENTRY FUNCTIONS ---
+        function deleteEntry(index) {
+            if (confirm("Apakah Anda yakin ingin menghapus data karyawan ini dari list?")) {
+                salaryHistoryList.splice(index, 1);
+                // Perbarui nomor urut
+                salaryHistoryList.forEach((item, i) => item.no = i + 1);
+                renderHistoryLists();
+            }
+        }
+
+        function openEditEntryModal(index) {
+            const item = salaryHistoryList[index];
+            document.getElementById('editIndex').value = index;
+            document.getElementById('editNama').value = item.nama;
+            document.getElementById('editPendidikan').value = item.pendidikan;
+            document.getElementById('editLamaKerja').value = item.lamaKerja;
+            document.getElementById('editJumlahAnak').value = item.jumlahAnak;
+            document.getElementById('editEntryModal').classList.add('active');
+        }
+
+        function closeEditEntryModal(e) {
+            if (e.target === document.getElementById('editEntryModal')) {
+                document.getElementById('editEntryModal').classList.remove('active');
+            }
+        }
+
+        function closeEditEntryModalDirect() {
+            document.getElementById('editEntryModal').classList.remove('active');
+        }
+
+        function saveEditedEntry() {
+            const idx = parseInt(document.getElementById('editIndex').value);
+            const nama = document.getElementById('editNama').value.trim();
+            const pendidikan = document.getElementById('editPendidikan').value;
+            const lamaKerja = parseInt(document.getElementById('editLamaKerja').value) || 0;
+            const jumlahAnak = parseInt(document.getElementById('editJumlahAnak').value) || 0;
+
+            if (lamaKerja > 25) {
+                alert("⚠️ Peringatan: Melewati batas tahun kerja maksimal (25 tahun)!");
+                return;
+            }
+
+            let calcResult = calculateSalaryDetails(lamaKerja, jumlahAnak);
+
+            salaryHistoryList[idx] = {
+                no: idx + 1,
+                nama: nama,
+                pendidikan: pendidikan,
+                lamaKerja: lamaKerja,
+                jumlahAnak: jumlahAnak,
+                gapok: calcResult.gapok,
+                tunjanganLamaKerja: calcResult.tunjanganLamaKerja,
+                tunjanganAnak: calcResult.tunjanganAnak,
+                premi: calcResult.premi,
+                    pph: calcResult.pph,
+                gajiBersih: calcResult.gajiBersih
+            };
+
+            closeEditEntryModalDirect();
+            renderHistoryLists();
+            alert("Data karyawan berhasil diperbarui!");
+        }
+
+        // --- UNDUH KE EXCEL FORMAT .XLSX (Rapi & Sejajar) ---
+        function downloadExcelXlsxTable() {
+            if (salaryHistoryList.length < 2) {
+                alert("Minimal harus ada 2 data list tersimpan untuk mengunduh tabel Excel (.xlsx).");
+                return;
+            }
+
+            // Menyusun array of objects untuk sheet Excel yang rapi & sejajar
+            let excelData = salaryHistoryList.map(item => ({
+                "No": item.no,
+                "Nama Karyawan": item.nama,
+                "Pendidikan": item.pendidikan,
+                "Lama Kerja (Tahun)": item.lamaKerja,
+                "Jumlah Anak": item.jumlahAnak,
+                "Gaji Pokok": item.gapok,
+                "Tunjangan Masa Kerja": item.tunjanganLamaKerja,
+                "Tunjangan Anak": item.tunjanganAnak,
+                "Premi": item.premi,
+                "Potongan PPH (3%)": item.pph,
+                "Total Gaji Bersih": item.gajiBersih
+            }));
+
+            // Buat worksheet dan workbook menggunakan SheetJS
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            
+            // Mengatur lebar kolom agar rapi dan sejajar otomatis
+            const colWidths = [
+                { wch: 5 },  // No
+                { wch: 25 }, // Nama Karyawan
+                { wch: 15 }, // Pendidikan
+                { wch: 18 }, // Lama Kerja
+                { wch: 14 }, // Jumlah Anak
+                { wch: 18 }, // Gaji Pokok
+                { wch: 22 }, // Tunjangan Masa Kerja
+                { wch: 18 }, // Tunjangan Anak
+                { wch: 15 }, // Premi
+                { wch: 18 }, // Potongan PPH
+                { wch: 20 }  // Total Gaji Bersih
+            ];
+            worksheet['!cols'] = colWidths;
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Histori Gaji Karyawan");
+
+            // Unduh file dengan ekstensi .xlsx
+            XLSX.writeFile(workbook, "Histori_Gaji_Hotel_Transylvania.xlsx");
+        }
+
+        function clearCalculator() {
+            document.getElementById('salaryForm').reset();
+            document.getElementById('resultSection').classList.remove('active');
+            document.getElementById('lamaKerjaError').classList.remove('active');
+        }
+
+        // Lightbox Functions
+        function openLightbox(src) {
+            document.getElementById('lightboxImg').src = src;
+            document.getElementById('lightboxModal').classList.add('active');
+        }
+        function closeLightbox() {
+            document.getElementById('lightboxModal').classList.remove('active');
+        }
+    </script>
+</body>
+</html>
